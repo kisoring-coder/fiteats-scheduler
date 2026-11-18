@@ -65,15 +65,10 @@ def wait_ready(cid, label):
 
 
 def make_reel(folder, caption):
-    path = os.path.join(folder, "video.mp4")
-    size = os.path.getsize(path)
-    p = {"media_type": "REELS", "upload_type": "resumable", "caption": caption, "share_to_feed": "true"}
+    p = {"media_type": "REELS", "video_url": raw_url(folder, "video.mp4"), "caption": caption, "share_to_feed": "true"}
     if os.path.exists(os.path.join(folder, "cover.jpg")):
         p["cover_url"] = raw_url(folder, "cover.jpg")
     cid = call("POST", f"{API}/{ME}/media", p)["id"]
-    with open(path, "rb") as f:
-        call("POST", f"https://rupload.facebook.com/ig-api-upload/v21.0/{cid}", data=f.read(),
-             headers={"Authorization": f"OAuth {TOKEN}", "offset": "0", "file_size": str(size)})
     wait_ready(cid, "video")
     return cid
 
@@ -120,8 +115,8 @@ def finish(folder, dest, info):
     name = os.path.basename(folder)
     target = os.path.join(dest, name)
     shutil.move(folder, target)
-    # keep the record, drop the heavy media so the repo stays small
-    for f in os.listdir(target):
+    # posted: drop the heavy media so the repo stays small; failed: keep it for a retry
+    for f in (os.listdir(target) if dest == "posted" else []):
         if f.lower().endswith((".mp4", ".mov")):
             os.remove(os.path.join(target, f))
     json.dump(info, open(os.path.join(target, "result.json"), "w"), indent=2)
