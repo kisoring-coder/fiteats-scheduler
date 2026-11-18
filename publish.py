@@ -137,6 +137,8 @@ def main():
         print("Publishing usage (last 24h):", lim)
         return
     now = datetime.now(IST)
+    for d in ("queue", "posted", "failed"):
+        os.makedirs(d, exist_ok=True)
     queue = sorted(os.path.join("queue", d) for d in os.listdir("queue") if os.path.isdir(os.path.join("queue", d)))
     failed = 0
     for folder in queue:
