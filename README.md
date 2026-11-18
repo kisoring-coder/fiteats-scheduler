@@ -26,8 +26,10 @@ Instagram app → **Settings → Account type and tools** → make sure it says 
 Open this repo → **Settings → Secrets and variables → Actions → New repository secret**
 - Name: `IG_TOKEN`  Value: the token from step 2.
 
-### 4. Let GitHub renew the token automatically
-Instagram tokens expire after 60 days; a weekly job renews it, and needs permission to save it.
+### 4. Let GitHub renew the token automatically (only if your token starts with IG)
+Skip this step if you generated a **system-user token** (starts with EAA) — it never expires.
+
+Instagram-login tokens expire after 60 days; a weekly job renews it, and needs permission to save it.
 1. Go to **github.com/settings/personal-access-tokens/new**
 2. Name `fiteats-token-refresh`, Expiration **1 year** (or no expiration), Repository access **Only select repositories → fiteats-scheduler**.
 3. Permissions → Repository permissions → **Secrets: Read and write** → **Generate token** → copy.

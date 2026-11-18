@@ -17,11 +17,17 @@ Usage: python publish.py          publish everything that is due
 import json, os, shutil, sys, time, urllib.parse, urllib.request
 from datetime import datetime, timedelta, timezone
 
-API = "https://graph.instagram.com/v21.0"
 IST = timezone(timedelta(hours=5, minutes=30))
 TOKEN = os.environ.get("IG_TOKEN", "").strip()
 REPO = os.environ.get("GITHUB_REPOSITORY", "")
 BRANCH = os.environ.get("GITHUB_REF_NAME", "main")
+# Instagram-login tokens start with "IG" and use graph.instagram.com with /me.
+# System-user / Facebook-login tokens (usually "EAA") use graph.facebook.com with the IG account id.
+IG_USER_ID = os.environ.get("IG_USER_ID", "").strip() or "17841449209573024"  # @fit_eats_25
+if TOKEN.startswith("IG"):
+    API, ME = "https://graph.instagram.com/v21.0", "me"
+else:
+    API, ME = "https://graph.facebook.com/v21.0", IG_USER_ID
 
 
 def call(method, url, params=None, data=None, headers=None):
@@ -64,7 +70,7 @@ def make_reel(folder, caption):
     p = {"media_type": "REELS", "upload_type": "resumable", "caption": caption, "share_to_feed": "true"}
     if os.path.exists(os.path.join(folder, "cover.jpg")):
         p["cover_url"] = raw_url(folder, "cover.jpg")
-    cid = call("POST", f"{API}/me/media", p)["id"]
+    cid = call("POST", f"{API}/{ME}/media", p)["id"]
     with open(path, "rb") as f:
         call("POST", f"https://rupload.facebook.com/ig-api-upload/v21.0/{cid}", data=f.read(),
              headers={"Authorization": f"OAuth {TOKEN}", "offset": "0", "file_size": str(size)})
@@ -73,7 +79,7 @@ def make_reel(folder, caption):
 
 
 def make_image(folder, caption):
-    cid = call("POST", f"{API}/me/media", {"image_url": raw_url(folder, "image.jpg"), "caption": caption})["id"]
+    cid = call("POST", f"{API}/{ME}/media", {"image_url": raw_url(folder, "image.jpg"), "caption": caption})["id"]
     wait_ready(cid, "image")
     return cid
 
@@ -85,10 +91,10 @@ def make_carousel(folder, caption):
         raise RuntimeError(f"carousel needs 2 to 10 images named 1.jpg, 2.jpg ... found {len(imgs)}")
     kids = []
     for im in imgs:
-        kid = call("POST", f"{API}/me/media", {"image_url": raw_url(folder, im), "is_carousel_item": "true"})["id"]
+        kid = call("POST", f"{API}/{ME}/media", {"image_url": raw_url(folder, im), "is_carousel_item": "true"})["id"]
         wait_ready(kid, im)
         kids.append(kid)
-    cid = call("POST", f"{API}/me/media", {"media_type": "CAROUSEL", "children": ",".join(kids), "caption": caption})["id"]
+    cid = call("POST", f"{API}/{ME}/media", {"media_type": "CAROUSEL", "children": ",".join(kids), "caption": caption})["id"]
     wait_ready(cid, "carousel")
     return cid
 
@@ -100,7 +106,7 @@ def publish(folder):
     kind = meta.get("type", "reel").lower()
     maker = {"reel": make_reel, "image": make_image, "carousel": make_carousel}[kind]
     cid = maker(folder, caption)
-    media_id = call("POST", f"{API}/me/media_publish", {"creation_id": cid})["id"]
+    media_id = call("POST", f"{API}/{ME}/media_publish", {"creation_id": cid})["id"]
     link = call("GET", f"{API}/{media_id}", {"fields": "permalink"}).get("permalink", "")
     return media_id, link
 
@@ -125,8 +131,8 @@ def main():
     if not TOKEN:
         sys.exit("IG_TOKEN secret is missing. See README step 3.")
     if len(sys.argv) > 1 and sys.argv[1] == "check":
-        me = call("GET", f"{API}/me", {"fields": "user_id,username,account_type"})
-        lim = call("GET", f"{API}/me/content_publishing_limit", {"fields": "quota_usage,config"})
+        me = call("GET", f"{API}/{ME}", {"fields": "username" if ME != "me" else "user_id,username,account_type"})
+        lim = call("GET", f"{API}/{ME}/content_publishing_limit", {"fields": "quota_usage,config"})
         print("Connected to Instagram:", me)
         print("Publishing usage (last 24h):", lim)
         return

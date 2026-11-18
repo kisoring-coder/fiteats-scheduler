@@ -16,6 +16,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           set -e
+          case "$IG_TOKEN" in IG*) ;; *) echo "System-user token never expires - nothing to renew."; exit 0;; esac
           resp=$(curl -sS "https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${IG_TOKEN}")
           new=$(echo "$resp" | python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))")
           if [ -z "$new" ]; then echo "Refresh failed: $(echo "$resp" | head -c 300)"; exit 1; fi
