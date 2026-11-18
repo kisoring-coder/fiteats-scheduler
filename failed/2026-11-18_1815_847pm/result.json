@@ -1,0 +1,4 @@
+{
+  "failed_at": "2026-11-18T18:21:18.483230+05:30",
+  "error": "400 {\"debug_info\":{\"retriable\":false,\"type\":\"ProcessingFailedError\",\"message\":\"Request processing failed\"}}"
+}
