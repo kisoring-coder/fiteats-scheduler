@@ -1,0 +1,26 @@
+name: Research an account (read-only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: "Instagram username (Business or Creator account)"
+        required: true
+      max_posts:
+        description: "How many recent posts"
+        default: "100"
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pull public posts
+        env:
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+        run: python research.py "${{ github.event.inputs.username }}" "${{ github.event.inputs.max_posts }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: research-${{ github.event.inputs.username }}
+          path: research_out/
+          retention-days: 3
