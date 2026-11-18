@@ -1,0 +1,24 @@
+name: Refresh Instagram token
+
+# Instagram tokens last 60 days. This renews it every Monday so it never expires.
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Renew token and save it back to the repo secret
+        env:
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -e
+          resp=$(curl -sS "https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${IG_TOKEN}")
+          new=$(echo "$resp" | python3 -c "import sys,json; print(json.load(sys.stdin).get('access_token',''))")
+          if [ -z "$new" ]; then echo "Refresh failed: $(echo "$resp" | head -c 300)"; exit 1; fi
+          echo "::add-mask::$new"
+          gh secret set IG_TOKEN --repo "${{ github.repository }}" --body "$new"
+          echo "Token renewed for another 60 days."

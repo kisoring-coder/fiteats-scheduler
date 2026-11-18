@@ -1,0 +1,45 @@
+name: Publish due posts
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 minutes
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "publish = post anything due now, check = only test the Instagram connection"
+        default: publish
+        type: choice
+        options: [publish, check]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish
+        env:
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+        run: |
+          if [ "${{ github.event.inputs.mode }}" = "check" ]; then
+            python publish.py check
+          else
+            python publish.py
+          fi
+      - name: Save results
+        if: always() && github.event.inputs.mode != 'check'
+        run: |
+          git config user.name "fiteats-scheduler"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A queue posted failed
+          if ! git diff --cached --quiet; then
+            git commit -m "Scheduler: update posted/failed"
+            git pull --rebase -q && git push -q
+          fi
