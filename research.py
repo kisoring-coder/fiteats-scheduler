@@ -2,7 +2,7 @@
 via Meta's business_discovery and save them (plus images) for analysis.
 Posts nothing.  Usage: python research.py <username> [max_posts]
 """
-import json, os, sys, urllib.parse, urllib.request
+import json, os, sys, urllib.error, urllib.parse, urllib.request
 
 TOKEN = os.environ["IG_TOKEN"].strip()
 IG_ID = os.environ.get("IG_USER_ID", "").strip() or "17841449209573024"
@@ -13,8 +13,11 @@ limit = int(sys.argv[2]) if len(sys.argv) > 2 else 100
 FIELDS = "id,caption,media_type,media_product_type,like_count,comments_count,timestamp,permalink,media_url,children{media_url,media_type}"
 
 def get(url):
-    with urllib.request.urlopen(url, timeout=60) as r:
-        return json.loads(r.read())
+    try:
+        with urllib.request.urlopen(url, timeout=60) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        sys.exit(f"Instagram API error {e.code}: {e.read().decode(errors='replace')[:800]}")
 
 posts, after, profile = [], None, {}
 while len(posts) < limit:
