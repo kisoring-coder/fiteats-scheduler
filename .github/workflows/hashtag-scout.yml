@@ -1,0 +1,28 @@
+name: Hashtag scout (read-only)
+
+# Manual only. Reads public hashtag posts via the official Graph API; posts nothing.
+# Results go to a short-lived workflow artifact, never into the repo.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Search hashtags
+        env:
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+        run: python scripts/hashtag_scout.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hashtag-scout
+          path: scout_out/
+          retention-days: 3
+          if-no-files-found: warn
