@@ -6,6 +6,7 @@ from b2 import (W, H, FPS, BG, TXT, GREY, DARK, LIME, CORAL, OUT, INK, F, clamp,
                 shape_mask, put, SP, bg, GLOW, headline_scaled)
 import build_emo as E
 import bf3
+import real2 as R
 
 TOTAL = 21.6
 SC = [
@@ -77,7 +78,8 @@ def protein_bowl():
 def build():
     b2.build_sprites()
     E.build()
-    SP.update(spine_r=spine(CORAL), spine_g=spine(LIME), desk=desk_person(), pain=pain(), pbowl=protein_bowl(),
+    SP.update(spine_r=R.spine_real("pain"), spine_g=R.spine_real("ok"), desk=R.desk_real(), pain=pain(), pbowl=R.protein_bowl_real(),
+              alarm=R.alarm_real(), brief=R.briefcase_real(), dumbbell=R.dumbbell_real(),
               bat_low=bf3.battery(0.12), egg=bf3.egg(half=True), you=b2.pill("YOU", DARK, fg=TXT, size=64),
               we=b2.pill("WE", LIME, size=64))
 
@@ -86,17 +88,16 @@ def draw(cv, d, key, t, t0):
     bob = math.sin(t*2.2)*6
     def pop(dt): return back((t-t0-dt)/0.4)
     if key == "tired":
-        put(cv, "bat_low", W/2, CY+bob, 1.4*p)
+        jit = 7*math.sin(t*55) if (t % 1.0) < 0.5 else 0
+        put(cv, "alarm", W/2+jit, CY+bob, 1.15*p)
         for i in range(3):
             a = clamp((t - 0.3 - i*0.25)/0.3)
             if a > 0: d.text((W/2+230+i*60, CY-150-i*70), "Z", font=F("anton", 70+i*24), fill=tuple(int(GREY[j]*a) for j in range(3)), anchor="mm")
     elif key == "back":
-        pulse = 1 + 0.06*abs(math.sin(t*5))
-        put(cv, "pain", W/2, CY+120, 1.3*pulse*pop(0.15))
-        put(cv, "spine_r", W/2, CY, 0.95*p)
+        put(cv, "spine_r", W/2, CY+40, 0.95*p)
+        put(cv, "pain", W/2+10, CY+170, 0.9*(1+0.08*abs(math.sin(t*5)))*pop(0.3), 0.7)
     elif key == "sit":
-        put(cv, "desk", W/2, CY+30, 1.15*p)
-        put(cv, "pain", W/2-200, CY-20, 0.8*(1+0.08*abs(math.sin(t*5)))*pop(0.3))
+        put(cv, "desk", W/2, CY+30, 1.25*p)
         hrs = min(9, int(1 + (t-t0)*6))
         d.rounded_rectangle((W/2-150, CY+300, W/2+150, CY+400), 24, fill=DARK)
         d.text((W/2, CY+350), f"{hrs} HRS", font=F("anton", 70), fill=CORAL, anchor="mm")
@@ -107,27 +108,27 @@ def draw(cv, d, key, t, t0):
         put(cv, "brief", W/2, CY+bob, 1.3*p)
         put(cv, "cross", W/2, CY, 1.0*pop(0.35))
     elif key == "body":
-        put(cv, "spine_g", W/2, CY, 0.95*p)
-        put(cv, "check", W/2+230, CY-180, 0.8*pop(0.4))
+        put(cv, "spine_g", W/2, CY+40, 0.95*p)
+        put(cv, "check", W/2+250, CY-160, 0.8*pop(0.4))
     elif key == "train":
         put(cv, "dumbbell", W/2, CY+bob, 1.4*p)
     elif key == "protein":
-        put(cv, "dumbbell", W/2-200, CY-170, 0.75)
+        put(cv, "dumbbell", W/2-170, CY-170, 0.7)
         d.text((W/2, CY-40), "+", font=F("anton", 120), fill=LIME, anchor="mm")
-        put(cv, "pbowl", W/2+60, CY+170+bob, 1.25*p)
-        put(cv, "egg", W/2-230, CY+200, 0.8*pop(0.25))
+        put(cv, "pbowl", W/2+70, CY+170+bob, 1.15*p)
+        put(cv, "egg", W/2-260, CY+230, 0.8*pop(0.25))
     elif key == "ease":
         fade = clamp((t-t0)/1.6)
-        put(cv, "spine_r", W/2, CY, 0.95, 1-fade)
-        put(cv, "spine_g", W/2, CY, 0.95, fade)
+        put(cv, "spine_r", W/2, CY+40, 0.95, 1-fade)
+        put(cv, "spine_g", W/2, CY+40, 0.95, fade)
         for i, (dx, dy) in enumerate(((-230,-200),(240,-60),(-200,200))):
             put(cv, "spark", W/2+dx, CY+dy, 0.8*pop(1.0+i*0.25)*(1+0.1*math.sin(t*6+i)))
     elif key == "youtrain":
         put(cv, "dumbbell", W/2, CY+60+bob, 1.25*p)
         put(cv, "you", W/2, CY-170, pop(0.2))
     elif key == "meals":
-        put(cv, "pbowl", W/2, CY-60+bob, 1.35*p)
-        put(cv, "we", W/2-260, CY-260, pop(0.15))
+        put(cv, "pbowl", W/2, CY-50+bob, 1.25*p)
+        put(cv, "we", W/2-300, CY-230, pop(0.15))
         days = ("MON","TUE","WED","THU","FRI","SAT")
         for i, dname in enumerate(days):
             x = W/2 - 400 + i*160; y = CY + 250
